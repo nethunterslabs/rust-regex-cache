@@ -21,13 +21,12 @@
 use std::fmt;
 use std::ops::Deref;
 use std::str;
-
-use oncemutex::OnceMutex;
 use std::sync::Arc;
 
-use crate::options::Options;
-use crate::syntax;
+use oncemutex::OnceMutex;
 use regex::{Error, Regex, RegexBuilder};
+
+use crate::options::Options;
 
 /// A lazily created `Regex`.
 ///
@@ -54,7 +53,7 @@ impl LazyRegex {
     /// Create a new lazy `Regex` for the given source, checking the syntax is
     /// valid.
     pub fn new(source: &str) -> Result<LazyRegex, Error> {
-        if let Err(err) = syntax::Parser::new().parse(source) {
+        if let Err(err) = regex_syntax::Parser::new().parse(source) {
             return Err(Error::Syntax(err.to_string()));
         }
 
@@ -95,9 +94,9 @@ impl AsRef<Regex> for LazyRegex {
     }
 }
 
-impl Into<Regex> for LazyRegex {
-    fn into(self) -> Regex {
-        let (regex, builder) = (self.regex, self.builder);
+impl From<LazyRegex> for Regex {
+    fn from(val: LazyRegex) -> Self {
+        let (regex, builder) = (val.regex, val.builder);
 
         Arc::try_unwrap(regex)
             .ok()
@@ -151,7 +150,7 @@ impl LazyRegexBuilder {
     /// pattern given to `new` verbatim. Notably, it will not incorporate any
     /// of the flags set on this builder.
     pub fn build(&self) -> Result<LazyRegex, Error> {
-        if let Err(err) = syntax::Parser::new().parse(&self.source) {
+        if let Err(err) = regex_syntax::Parser::new().parse(&self.source) {
             return Err(Error::Syntax(err.to_string()));
         }
 

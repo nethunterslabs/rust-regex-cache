@@ -24,11 +24,12 @@ use std::ops::{Deref, DerefMut};
 use std::str;
 use std::sync::{Arc, Mutex};
 
-use crate::bytes::options::Options;
-use crate::lru::LruCache;
-use crate::syntax;
+use lru_cache::LruCache;
+
 use regex::bytes::{Captures, Match, Regex, RegexBuilder, Replacer};
 use regex::Error;
+
+use crate::bytes::options::Options;
 
 /// An LRU cache for regular expressions.
 #[derive(Clone, Debug)]
@@ -147,7 +148,7 @@ impl CachedRegex {
     /// Create a new cached `Regex` for the given source, checking the syntax is
     /// valid.
     pub fn new(cache: Arc<Mutex<RegexCache>>, source: &str) -> Result<CachedRegex, Error> {
-        if let Err(err) = syntax::Parser::new().parse(source) {
+        if let Err(err) = regex_syntax::Parser::new().parse(source) {
             return Err(Error::Syntax(err.to_string()));
         }
 
@@ -245,7 +246,7 @@ impl CachedRegexBuilder {
     /// pattern given to `new` verbatim. Notably, it will not incorporate any
     /// of the flags set on this builder.
     pub fn build(&self) -> Result<CachedRegex, Error> {
-        if let Err(err) = syntax::Parser::new().parse(&self.source) {
+        if let Err(err) = regex_syntax::Parser::new().parse(&self.source) {
             return Err(Error::Syntax(err.to_string()));
         }
 
